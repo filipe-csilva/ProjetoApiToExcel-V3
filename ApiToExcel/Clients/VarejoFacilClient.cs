@@ -1,5 +1,6 @@
 using ApiToExcel.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Net.Http.Json;
 
 namespace ApiToExcel.Clients;
@@ -28,6 +29,21 @@ public class VarejoFacilClient : IDisposable
         string json = _http.GetStringAsync(route).Result!;
 
         return JsonConvert.DeserializeObject<T>(json)!;
+    }
+
+    public JObject ConsultarProdutos(int count = 1)
+    {
+        return GetFromRoute<JObject>($"/api/v1/produto/produtos?count={count}");
+    }
+
+    public JObject ConsultarFornecedores(int count = 1)
+    {
+        return GetFromRoute<JObject>($"/api/v1/pessoa/fornecedores?count={count}");
+    }
+
+    public JObject ConsultarVinculos(long produtoId, int count = 1000)
+    {
+        return GetFromRoute<JObject>($"/api/v1/produto/produtos/{produtoId}/fornecedores?count={count}");
     }
 
     public TokenCredential Authorize(PasswordCredential credential)

@@ -9,82 +9,62 @@ namespace ApiToExcel
     public partial class FrmPessoFornecedores : Form, IDisposable
     {
         private VarejoFacilClient? _varejoFacil;
+        private IOService _io = new();
 
         public FrmPessoFornecedores()
         {
             InitializeComponent();
         }
 
-        // TODO: Implementar
         private async Task<JArray> ConsultarProdutos()
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException();
+            JObject pagina = _varejoFacil.ConsultarProdutos(count: int.MaxValue);
+            return (JArray)pagina["items"]!;
         }
 
-        // // TODO: método VarejoFacilClient.ConsultarProdutos precisa ser criado
-        // private async Task<JArray> ConsultarProdutos()
-        // {
-        //     JObject pagina = _varejoFacil.ConsultarProdutos(max: int.MaxValue);
-        //     return (JArray)pagina.items;
-        // }
-
-        // TODO: Implementar
         private async Task<JArray> ConsultarFornecedores()
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException();
+            JObject pagina = _varejoFacil.ConsultarFornecedores(count: int.MaxValue);
+            return (JArray)pagina["items"]!;
         }
-
-        // // TODO: método VarejoFacilClient.ConsultarFornecedores precisa ser criado
-        // private async Task<JArray> ConsultarFornecedores()
-        // {
-        //     JObject pagina = _varejoFacil.ConsultarFornecedores(max: int.MaxValue);
-        //     return (JArray)pagina["items"];
-        // }
 
         private async Task<JArray> ConsultarVinculos(JArray produtos)
         {
-            return await ConsultarVinculos(produtos.Select(p => p["id"]!.Value<int>()));
+            return await ConsultarVinculos(produtos.Select(p => p["id"]!.Value<long>()));
         }
 
-        private async Task<JArray> ConsultarVinculos(IEnumerable<int> produtoIds)
-        {   
+        private async Task<JArray> ConsultarVinculos(IEnumerable<long> produtoIds)
+        {
             JArray vinculos = new();
 
-            foreach(int produtoId in produtoIds)
+            foreach (long produtoId in produtoIds)
             {
-                JArray vinculosProduto = await ConsultarVinculos(produtoId);
-                JArray items = (JArray)vinculosProduto["items"]!;
-                
-                vinculos.Add(items);
+                JArray items = await ConsultarVinculos(produtoId);
+
+                foreach (JToken item in items)
+                {
+                    vinculos.Add(item);
+                }
             }
 
             return vinculos;
         }
 
-        // TODO: Implementar
-        private async Task<JArray> ConsultarVinculos(int produtoId)
+        private async Task<JArray> ConsultarVinculos(long produtoId)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException();
+            JObject pagina = _varejoFacil.ConsultarVinculos(
+                produtoId: produtoId,
+                count: int.MaxValue);
+
+            return (JArray)pagina["items"]!;
         }
 
-        // // TODO: método VarejoFacilClient.ConsultarVinculos precisa ser criado
-        // private async Task<JArray> ConsultarVinculos(int produtoId)
-        // {
-        //     JObject pagina = varejoFacil.ConsultarVinculos(
-        //         produtoId: produtoId,
-        //         max: int.MaxValue);
-
-        //     return (JArray)pagina["items"];
-        // }
-
-        // Passo 1: Consultar items genêricos da Rota
+        // Passo 1: Consultar items genericos pela rota informada pelo usuario
         private async Task<JArray> GerarRelatorioGenerico()
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException();
+            JObject pagina = _varejoFacil.GetFromRoute<JObject>(TxRouter.Text);
+            JArray items = (JArray)pagina["items"]!;
+            return items;
         }
 
         // Passo 0: Criar os métodos de consulta em VarejoFacilClient
@@ -99,176 +79,200 @@ namespace ApiToExcel
         // GET: /api/v1/produto/produtos/{produtoId}/?limite=max
         private async Task<JArray> GerarRelatorioVinculos()
         {
-            // Passo 1: Você precisar ter as tres coleções preenchida com dados
+            // Passo 1: Voce precisar ter as tres coleções preenchida com dados
             JArray produtos = await ConsultarProdutos();
             JArray fornecedores = await ConsultarFornecedores();
             JArray vinculos = await ConsultarVinculos(produtos);
 
             // Passo 2: Faz o join e escolher as propriedades e seus nomes
-            JArray relatorio =
+            IEnumerable<JToken> items =
                 from p in produtos
                 join v in vinculos
-                    on p["produtoId"]!.Value<int>() equals v["produtoId"]!.Value<int>()
+                    on p["id"]!.Value<long>() equals v["produtoId"]!.Value<long>()
                 join f in fornecedores
-                    on v["fornecedorId"]!.Value<int>() equals f["fornecedorId"]!.Value<int>()
-                select new
+                    on v["fornecedorId"]!.Value<int>() equals f["id"]!.Value<int>()
+                select JObject.FromObject(new
                 {
+                    codigo = p["id"],
                     descricao = p["descricao"],
-                    fornecedorId = f["fornecedorId"],
+                    fornecedorId = f["id"],
                     nome = f["nome"],
                     referencia = v["referencia"],
                     unidade = v["unidade"],
-                    quantidade = v.["quantidade"],
-                    nivel = v.["nivel"]
-                };
+                    quantidade = v["quantidade"],
+                    nivel = v["nivel"]
+                });
 
-            return relatorio;
+            return new JArray(items);
         }
 
-        private async Task GerarArquivoXML()
+        private async Task GerarArquivoXML(JArray items)
         {
-            await Task.CompletedTask;
-            throw new NotImplementedException();
+            _io.WriteXmlFile(items);
         }
 
         private async void BtnExecutar_Click(object sender, EventArgs e)
         {
-            string urlEntrada = TxUrlAPI.Text;
-            string url = $"https://{urlEntrada}";
+            /* Inserior o código aqui */
 
-            try
+            string url = TxUrlAPI.Text;
+
+            var credential = new PasswordCredential(
+                Username: TxUser.Text,
+                Password: TxPass.Text);
+
+            _varejoFacil ??= new VarejoFacilClient(
+                baseAddress: url,
+                passwordCredential: credential);
+
+            // TODO: adicionar checkbox ou radiobox
+            const bool isModuloProdutosFornecedores = true;
+
+            JArray relatorio = isModuloProdutosFornecedores switch
             {
-                await UpdateTxtJson("Iniciando");
+                true => await GerarRelatorioVinculos(),
+                false => await GerarRelatorioGenerico()
+            };
 
-                if (string.IsNullOrWhiteSpace(urlEntrada))
-                {
-                    await UpdateTxtJson("A url da API está vazia.\n\nTente novamente!");
-                    return;
-                }
+            await GerarArquivoXML(relatorio);
 
-                if (string.IsNullOrWhiteSpace(TxRouter.Text))
-                {
-                    await UpdateTxtJson("A Rota da API está vazia.\n\nTente novamente!");
-                    return;
-                }
+            /* Comente o abaixo */
+            //string urlEntrada = TxUrlAPI.Text;
+            //string url = $"https://{urlEntrada}";
 
-                if (string.IsNullOrWhiteSpace(TxUser.Text))
-                {
-                    await UpdateTxtJson("O Usuario está vazio.\n\nTente novamente!");
-                    return;
-                }
+            //try
+            //{
+            //    await UpdateTxtJson("Iniciando");
 
-                if (string.IsNullOrWhiteSpace(TxPass.Text))
-                {
-                    await UpdateTxtJson("A Senha está vazia.\n\nTente novamente!");
-                    return;
-                }
+            //    if (string.IsNullOrWhiteSpace(urlEntrada))
+            //    {
+            //        await UpdateTxtJson("A url da API está vazia.\n\nTente novamente!");
+            //        return;
+            //    }
 
-                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-                {
-                    var credential = new PasswordCredential(
-                        Username: TxUser.Text,
-                        Password: TxPass.Text);
+            //    if (string.IsNullOrWhiteSpace(TxRouter.Text))
+            //    {
+            //        await UpdateTxtJson("A Rota da API está vazia.\n\nTente novamente!");
+            //        return;
+            //    }
 
-                    await UpdateTxtJson("Solicitado o acesso.");
+            //    if (string.IsNullOrWhiteSpace(TxUser.Text))
+            //    {
+            //        await UpdateTxtJson("O Usuario está vazio.\n\nTente novamente!");
+            //        return;
+            //    }
 
-                    // WARNING: ...
-                    _varejoFacil = new VarejoFacilClient(
-                        baseAddress: url,
-                        passwordCredential: credential);
+            //    if (string.IsNullOrWhiteSpace(TxPass.Text))
+            //    {
+            //        await UpdateTxtJson("A Senha está vazia.\n\nTente novamente!");
+            //        return;
+            //    }
 
-                    // TODO: substitui o uso da variável local varejoFacil pelo camplo _varejoFacil
-                    using var varejoFacil = new VarejoFacilClient(
-                        baseAddress: url,
-                        passwordCredential: credential);
+            //    if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            //    {
+            //        var credential = new PasswordCredential(
+            //            Username: TxUser.Text,
+            //            Password: TxPass.Text);
 
-                    await UpdateTxtJson("Acessando a o caminho da API.");
+            //        await UpdateTxtJson("Solicitado o acesso.");
 
-                    dynamic resultados = varejoFacil.GetFromRoute<dynamic>(TxRouter.Text);
+            //        // WARNING: ...
+            //        _varejoFacil = new VarejoFacilClient(
+            //            baseAddress: url,
+            //            passwordCredential: credential);
 
-                    await UpdateTxtJson("Criando Arquivo Excel.");
+            //        // TODO: substitui o uso da variável local varejoFacil pelo camplo _varejoFacil
+            //        using var varejoFacil = new VarejoFacilClient(
+            //            baseAddress: url,
+            //            passwordCredential: credential);
 
-                    var io = new IOService();
+            //        await UpdateTxtJson("Acessando a o caminho da API.");
 
-                    using var workbook = new XLWorkbook();
-                    var worksheet = workbook.Worksheets.Add("Planilha");
+            //        dynamic resultados = varejoFacil.GetFromRoute<dynamic>(TxRouter.Text);
 
-                    // Verifique se fornecedores.items é uma coleção JSON
-                    if (resultados.items is JArray jsonArray)
-                    {
-                        // Preencha a planilha com os dados da segunda rota
-                        int rowIndex = 1; // Começando da primeira linha
+            //        await UpdateTxtJson("Criando Arquivo Excel.");
 
-                        List<string> columns = new List<string>();
+            //        var io = new IOService();
 
-                        foreach (var item in jsonArray)
-                        {
-                            if (item is JObject jsonObject && jsonObject["id"] is JValue idValue)
-                            {
-                                string produtoId = idValue.ToString();
+            //        using var workbook = new XLWorkbook();
+            //        var worksheet = workbook.Worksheets.Add("Planilha");
 
-                                // Consulte a segunda rota com base no ID
-                                string novaRota = $"/api/v1/produto/produtos/{produtoId}/fornecedores";
-                                dynamic resultadoNovaRota = varejoFacil.GetFromRoute<dynamic>(novaRota);
+            //        // Verifique se fornecedores.items é uma coleção JSON
+            //        if (resultados.items is JArray jsonArray)
+            //        {
+            //            // Preencha a planilha com os dados da segunda rota
+            //            int rowIndex = 1; // Começando da primeira linha
 
-                                if (resultadoNovaRota.items is JArray novaRotaArray && novaRotaArray.Count > 0)
-                                {
-                                    // Adicione a coluna "descricao" à planilha se ainda não existir
-                                    if (rowIndex == 1 && columns.Count == 0)
-                                    {
-                                        columns = GetColumnNames(novaRotaArray[0]).ToList();
+            //            List<string> columns = new List<string>();
 
-                                        // Adicione a coluna "descricao"
-                                        columns.Add("produto");
+            //            foreach (var item in jsonArray)
+            //            {
+            //                if (item is JObject jsonObject && jsonObject["id"] is JValue idValue)
+            //                {
+            //                    string produtoId = idValue.ToString();
 
-                                        for (var colIndex = 0; colIndex < columns.Count; colIndex++)
-                                        {
-                                            worksheet.Cell(1, colIndex + 1).Value = columns[colIndex];
-                                        }
-                                    }
+            //                    // Consulte a segunda rota com base no ID
+            //                    string novaRota = $"/api/v1/produto/produtos/{produtoId}/fornecedores";
+            //                    dynamic resultadoNovaRota = varejoFacil.GetFromRoute<dynamic>(novaRota);
 
-                                    // Adicione os dados da coluna "descricao" à planilha
-                                    if (jsonObject["descricao"] is JValue descricaoValue)
-                                    {
-                                        // Adicione "produto" ao nome da coluna
-                                        var columnName = "produto";
+            //                    if (resultadoNovaRota.items is JArray novaRotaArray && novaRotaArray.Count > 0)
+            //                    {
+            //                        // Adicione a coluna "descricao" à planilha se ainda não existir
+            //                        if (rowIndex == 1 && columns.Count == 0)
+            //                        {
+            //                            columns = GetColumnNames(novaRotaArray[0]).ToList();
 
-                                        worksheet.Cell(rowIndex, columns.IndexOf(columnName) + 1).Value = descricaoValue.ToString();
-                                    }
+            //                            // Adicione a coluna "descricao"
+            //                            columns.Add("produto");
+
+            //                            for (var colIndex = 0; colIndex < columns.Count; colIndex++)
+            //                            {
+            //                                worksheet.Cell(1, colIndex + 1).Value = columns[colIndex];
+            //                            }
+            //                        }
+
+            //                        // Adicione os dados da coluna "descricao" à planilha
+            //                        if (jsonObject["descricao"] is JValue descricaoValue)
+            //                        {
+            //                            // Adicione "produto" ao nome da coluna
+            //                            var columnName = "produto";
+
+            //                            worksheet.Cell(rowIndex, columns.IndexOf(columnName) + 1).Value = descricaoValue.ToString();
+            //                        }
 
 
-                                    // Adicione os dados da segunda rota à planilha
-                                    foreach (var novaRotaItem in novaRotaArray)
-                                    {
-                                        rowIndex++;
+            //                        // Adicione os dados da segunda rota à planilha
+            //                        foreach (var novaRotaItem in novaRotaArray)
+            //                        {
+            //                            rowIndex++;
 
-                                        // Adicione os dados do novo item à planilha
-                                        var colIndex = 1;
-                                        if (novaRotaItem is JObject obj)
-                                        {
-                                            foreach (var property in obj.Properties())
-                                            {
-                                                worksheet.Cell(rowIndex, colIndex).Value = property.Value?.ToString();
-                                                colIndex++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+            //                            // Adicione os dados do novo item à planilha
+            //                            var colIndex = 1;
+            //                            if (novaRotaItem is JObject obj)
+            //                            {
+            //                                foreach (var property in obj.Properties())
+            //                                {
+            //                                    worksheet.Cell(rowIndex, colIndex).Value = property.Value?.ToString();
+            //                                    colIndex++;
+            //                                }
+            //                            }
+            //                        }
+            //                    }
+            //                }
+            //            }
+            //        }
 
-                    // Salve o arquivo Excel
-                    workbook.SaveAs(saveFileDialog1.FileName);
-                    await UpdateTxtJson("Arquivo Excel criado com sucesso.");
-                }
-            }
-            catch (Exception ex)
-            {
+            //        // Salve o arquivo Excel
+            //        workbook.SaveAs(saveFileDialog1.FileName);
+            //        await UpdateTxtJson("Arquivo Excel criado com sucesso.");
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
 
-                UpdateTxtJson($"Erro na requisição: {ex.Message}");
-                throw ex;
-            }
+            //    UpdateTxtJson($"Erro na requisição: {ex.Message}");
+            //    throw ex;
+            //}
         }
 
         public void TxtJson_TextChanged(object sender, EventArgs e)
