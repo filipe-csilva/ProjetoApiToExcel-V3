@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Newtonsoft.Json.Linq;
+using System.Windows.Forms;
 
 namespace ApiToExcel.Services;
 
@@ -20,7 +21,7 @@ public class IOService
 
     public string DirectoryPath { get; }
 
-    public void WriteXmlFile(JArray jsonArray)
+    public void WriteXmlFile(JArray jsonArray, string pathSave)
     {
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Planilha");
@@ -72,7 +73,8 @@ public class IOService
         }
 
         const string fileName = "merenomeie.xlsx";
-        string filePath = Path.Combine(DirectoryPath, fileName);
+        //string filePath = Path.Combine(DirectoryPath, fileName);
+        string filePath = Path.Combine(pathSave);
         workbook.SaveAs(filePath);
     }
 

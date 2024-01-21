@@ -11,6 +11,8 @@ public class VarejoFacilClient : IDisposable
     private readonly HttpClient _http;
     private readonly TokenCredential _tokenCredential;
     private bool _disposed;
+    const int maxCount = 500;
+    const int startCount = 0;
 
     public VarejoFacilClient(string baseAddress, PasswordCredential passwordCredential)
     {
@@ -31,17 +33,17 @@ public class VarejoFacilClient : IDisposable
         return JsonConvert.DeserializeObject<T>(json)!;
     }
 
-    public JObject ConsultarProdutos(int count = 1)
+    public JObject ConsultarProdutos(int start = startCount, int count = maxCount)
     {
-        return GetFromRoute<JObject>($"/api/v1/produto/produtos?count={count}");
+        return GetFromRoute<JObject>($"/api/v1/produto/produtos?start={start}&count={count}");
     }
 
-    public JObject ConsultarFornecedores(int count = 1)
+    public JObject ConsultarFornecedores(int count = maxCount)
     {
         return GetFromRoute<JObject>($"/api/v1/pessoa/fornecedores?count={count}");
     }
 
-    public JObject ConsultarVinculos(long produtoId, int count = 1000)
+    public JObject ConsultarVinculos(long produtoId, int count = maxCount)
     {
         return GetFromRoute<JObject>($"/api/v1/produto/produtos/{produtoId}/fornecedores?count={count}");
     }

@@ -41,6 +41,8 @@
             TxPass = new TextBox();
             label4 = new Label();
             label5 = new Label();
+            label6 = new Label();
+            Cb_Vinculo = new CheckBox();
             SuspendLayout();
             // 
             // TxtJson
@@ -76,7 +78,7 @@
             TxUrlAPI.Name = "TxUrlAPI";
             TxUrlAPI.Size = new Size(411, 23);
             TxUrlAPI.TabIndex = 5;
-            TxUrlAPI.Text = "https://";
+            TxUrlAPI.Text = "https://pbtec.varejofacil.com";
             // 
             // label1
             // 
@@ -104,7 +106,7 @@
             TxRouter.Name = "TxRouter";
             TxRouter.Size = new Size(411, 23);
             TxRouter.TabIndex = 8;
-            TxRouter.Text = "/api/v1/";
+            TxRouter.Text = "/api/v1/produto/produtos";
             // 
             // label2
             // 
@@ -121,9 +123,9 @@
             label3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             label3.Location = new Point(12, 124);
             label3.Name = "label3";
-            label3.Size = new Size(125, 15);
+            label3.Size = new Size(242, 15);
             label3.TabIndex = 10;
-            label3.Text = "/api/v1/pessoa/client";
+            label3.Text = "/api/v1/pessoa/client?start=1&&count=500";
             // 
             // TxUser
             // 
@@ -132,6 +134,7 @@
             TxUser.Name = "TxUser";
             TxUser.Size = new Size(146, 23);
             TxUser.TabIndex = 11;
+            TxUser.Text = "admin";
             // 
             // TxPass
             // 
@@ -141,6 +144,7 @@
             TxPass.PasswordChar = '*';
             TxPass.Size = new Size(146, 23);
             TxPass.TabIndex = 12;
+            TxPass.Text = "admin";
             // 
             // label4
             // 
@@ -162,11 +166,32 @@
             label5.TabIndex = 14;
             label5.Text = "Senha";
             // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(12, 152);
+            label6.Name = "label6";
+            label6.Size = new Size(132, 15);
+            label6.TabIndex = 16;
+            label6.Text = "Conversão por Vinculos";
+            // 
+            // Cb_Vinculo
+            // 
+            Cb_Vinculo.AutoSize = true;
+            Cb_Vinculo.Location = new Point(17, 172);
+            Cb_Vinculo.Name = "Cb_Vinculo";
+            Cb_Vinculo.Size = new Size(54, 19);
+            Cb_Vinculo.TabIndex = 17;
+            Cb_Vinculo.Text = "Ativo";
+            Cb_Vinculo.UseVisualStyleBackColor = true;
+            // 
             // FrmPessoFornecedores
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(435, 518);
+            Controls.Add(Cb_Vinculo);
+            Controls.Add(label6);
             Controls.Add(label5);
             Controls.Add(label4);
             Controls.Add(TxPass);
@@ -200,5 +225,7 @@
         private TextBox TxPass;
         private Label label4;
         private Label label5;
+        private Label label6;
+        private CheckBox Cb_Vinculo;
     }
 }
