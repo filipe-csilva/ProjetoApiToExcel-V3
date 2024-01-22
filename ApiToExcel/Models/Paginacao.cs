@@ -6,16 +6,21 @@ using System.Threading.Tasks;
 
 namespace ApiToExcel.Models
 {
-    public class Paginacao<TDados>
+    public class Paginacao<TDados>(TDados[] items, int itemTotal, int total)
     {
-        public Paginacao(TDados[] dados, int itemTotal)
-        {
-            Dados = dados;
-            ItemTotal = itemTotal;
-        }
+        public TDados[] Dados { get; private init; } = items;
+        public int ItemsTotal { get; private init; } = total;
+        public int ItemsPorPagina => Dados.Count();
 
-        public TDados[] Dados { get; private init; }
-        public int ItemTotal { get; private init; }
-        public int ItensPorPagina => Dados.Count();
+        public override string ToString()
+        {
+            string strDados = string.Join(". ", Dados);
+
+            return $"""
+                    Dados: {strDados}
+                    ItemsTotal: {ItemsTotal}
+                    ItemsPorPagina: {ItemsPorPagina}
+                """;
+        }
     }
 }

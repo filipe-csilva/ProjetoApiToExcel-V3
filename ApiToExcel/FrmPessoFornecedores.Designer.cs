@@ -78,7 +78,7 @@
             TxUrlAPI.Name = "TxUrlAPI";
             TxUrlAPI.Size = new Size(411, 23);
             TxUrlAPI.TabIndex = 5;
-            TxUrlAPI.Text = "https://pbtec.varejofacil.com";
+            TxUrlAPI.Text = "https://";
             // 
             // label1
             // 
@@ -92,7 +92,7 @@
             // Lb_Ex_1
             // 
             Lb_Ex_1.AutoSize = true;
-            Lb_Ex_1.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            Lb_Ex_1.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             Lb_Ex_1.Location = new Point(12, 51);
             Lb_Ex_1.Name = "Lb_Ex_1";
             Lb_Ex_1.Size = new Size(107, 15);
@@ -106,7 +106,7 @@
             TxRouter.Name = "TxRouter";
             TxRouter.Size = new Size(411, 23);
             TxRouter.TabIndex = 8;
-            TxRouter.Text = "/api/v1/produto/produtos";
+            TxRouter.Text = "/api/v1/";
             // 
             // label2
             // 
@@ -120,7 +120,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            label3.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             label3.Location = new Point(12, 124);
             label3.Name = "label3";
             label3.Size = new Size(242, 15);
@@ -134,7 +134,6 @@
             TxUser.Name = "TxUser";
             TxUser.Size = new Size(146, 23);
             TxUser.TabIndex = 11;
-            TxUser.Text = "admin";
             // 
             // TxPass
             // 
@@ -144,7 +143,6 @@
             TxPass.PasswordChar = '*';
             TxPass.Size = new Size(146, 23);
             TxPass.TabIndex = 12;
-            TxPass.Text = "admin";
             // 
             // label4
             // 

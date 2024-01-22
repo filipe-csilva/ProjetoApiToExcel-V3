@@ -19,21 +19,19 @@ namespace ApiToExcel
 
         private async Task<JArray> ConsultarProdutos()
         {
-            await UpdateTxtJson("Consultando Produtos");
-            JObject pagina = _varejoFacil.ConsultarProdutos(count: int.MaxValue);
-            return (JArray)pagina["items"]!;
+            ConcatTxtJson("Consultando Produtos");
+            return _varejoFacil.ConsultarProdutos();
         }
 
         private async Task<JArray> ConsultarFornecedores()
         {
-            await UpdateTxtJson("Consultando Fornecedores ");
-            JObject pagina = _varejoFacil.ConsultarFornecedores(count: int.MaxValue);
-            return (JArray)pagina["items"]!;
+            ConcatTxtJson("Consultando Fornecedores ");
+            return _varejoFacil.ConsultarFornecedores();
         }
 
         private async Task<JArray> ConsultarVinculos(JArray produtos)
         {
-            await UpdateTxtJson("Consultando Vinculos");
+            ConcatTxtJson("Consultando Vinculos");
             return await ConsultarVinculos(produtos.Select(p => p["id"]!.Value<long>()));
         }
 
@@ -41,12 +39,20 @@ namespace ApiToExcel
 
         private async Task<JArray> ConsultarVinculos(IEnumerable<long> produtoIds)
         {
+            DateTime startTime = DateTime.Now; // [Exemplo]
+            DateTime expirationTime = startTime.AddMinutes(28); // [Exemplo]
+
             JArray vinculos = new();
 
             int quantidadeTotal = produtoIds.Count();
 
             foreach (long produtoId in produtoIds)
             {
+                if(DateTime.Now >= expirationTime)  // [Exemplo]
+                {
+                    _varejoFacil.RefreshToken();  // [Exemplo]
+                }
+
                 JArray items = await ConsultarVinculos(produtoId);
 
                 foreach (JToken item in items)
@@ -54,7 +60,7 @@ namespace ApiToExcel
                     vinculos.Add(item);
                 }
                 quantidadeAtual++;
-                await UpdateTxtJson($"Consultando vinculo do item {quantidadeAtual} de {quantidadeTotal}");
+                ConcatTxtJson($"Consultando vinculo do item {quantidadeAtual} de {quantidadeTotal}");
             }
 
             return vinculos;
@@ -62,21 +68,14 @@ namespace ApiToExcel
 
         private async Task<JArray> ConsultarVinculos(long produtoId)
         {
-            JObject pagina = _varejoFacil.ConsultarVinculos(
-                produtoId: produtoId,
-                count: int.MaxValue);
-
-            return (JArray)pagina["items"]!;
+            return _varejoFacil.ConsultarVinculos(produtoId);
         }
 
         // Passo 1: Consultar items genericos pela rota informada pelo usuario
         private async Task<JArray> GerarRelatorioGenerico()
         {
-            await UpdateTxtJson("Acessando Rotina Solicitada");
-            JObject pagina = _varejoFacil.GetFromRoute<JObject>(TxRouter.Text);
-            await UpdateTxtJson("Arquivo JSON Recolhido");
-            JArray items = (JArray)pagina["items"]!;
-            return items;
+            ConcatTxtJson("Acessando Rotina Solicitada");
+            return _varejoFacil.GetFromRoute<JObject>(TxRouter.Text);
         }
 
         // Passo 0: Criar os métodos de consulta em VarejoFacilClient
@@ -120,42 +119,41 @@ namespace ApiToExcel
 
         private async Task GerarArquivoXML(JArray items, string pathSave)
         {
-            await UpdateTxtJson("Gerando arquivo Excel");
+            ConcatTxtJson("Gerando arquivo Excel");
             _io.WriteXmlFile(items, pathSave);
-            await UpdateTxtJson("Arquivo Excel criado com sucesso.");
+            ConcatTxtJson("Arquivo Excel criado com sucesso.");
         }
 
         private async void BtnExecutar_Click(object sender, EventArgs e)
         {
-            /* Inserir o código aqui */
 
             string url = TxUrlAPI.Text;
 
             try
             {
-                await UpdateTxtJson("Iniciando");
+                ConcatTxtJson("Iniciando");
 
                 if (string.IsNullOrWhiteSpace(url))
                 {
-                    await UpdateTxtJson("A url da API está vazia.\n\nTente novamente!");
+                    ConcatTxtJson("A url da API está vazia.\n\nTente novamente!");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(TxRouter.Text))
                 {
-                    await UpdateTxtJson("A Rota da API está vazia.\n\nTente novamente!");
+                    ConcatTxtJson("A Rota da API está vazia.\n\nTente novamente!");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(TxUser.Text))
                 {
-                    await UpdateTxtJson("O Usuario está vazio.\n\nTente novamente!");
+                    ConcatTxtJson("O Usuario está vazio.\n\nTente novamente!");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(TxPass.Text))
                 {
-                    await UpdateTxtJson("A Senha está vazia.\n\nTente novamente!");
+                    ConcatTxtJson("A Senha está vazia.\n\nTente novamente!");
                     return;
                 }
 
@@ -166,13 +164,13 @@ namespace ApiToExcel
                         Username: TxUser.Text,
                         Password: TxPass.Text);
 
-                    await UpdateTxtJson("Solicitando Autorização");
+                    ConcatTxtJson("Solicitando Autorização");
 
-                    _varejoFacil ??= new VarejoFacilClient(
-                        baseAddress: url,
-                        passwordCredential: credential);
+                    if (_varejoFacil is null)
+                        _varejoFacil = new VarejoFacilClient(url, credential, this);
+                    else
+                        _varejoFacil.RefreshToken();
 
-                    // TODO: adicionar checkbox ou radiobox
                     bool vinculoAtivo = false;
                     if (Cb_Vinculo.Checked) vinculoAtivo = true;
                     bool isModuloProdutosFornecedores = vinculoAtivo;
@@ -184,14 +182,13 @@ namespace ApiToExcel
                     };
 
                     await GerarArquivoXML(relatorio, saveFileDialog1.FileName);
-
                 }
             }
             catch (Exception ex)
             {
 
-                UpdateTxtJson($"Erro na requisição: {ex.Message}");
-                throw ex;
+                ConcatTxtJson($"Erro na requisição: {ex.Message}");
+                throw;
             }
         }
 
@@ -200,9 +197,9 @@ namespace ApiToExcel
 
         }
 
-        public async Task UpdateTxtJson(string message)
+        public void ConcatTxtJson(string message)
         {
-            TxtJson.Text = message;
+            TxtJson.Text += Environment.NewLine+message;
         }
 
         private void FrmPessoFornecedores_Load(object sender, EventArgs e)
