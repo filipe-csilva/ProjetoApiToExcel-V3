@@ -78,7 +78,7 @@
             TxUrlAPI.Name = "TxUrlAPI";
             TxUrlAPI.Size = new Size(411, 23);
             TxUrlAPI.TabIndex = 5;
-            TxUrlAPI.Text = "https://manairahortifruti.varejofacil.com";
+            TxUrlAPI.Text = "https://";
             // 
             // label1
             // 
@@ -106,7 +106,7 @@
             TxRouter.Name = "TxRouter";
             TxRouter.Size = new Size(411, 23);
             TxRouter.TabIndex = 8;
-            TxRouter.Text = "/api/v1/produto/produtos";
+            TxRouter.Text = "/api/v1/";
             // 
             // label2
             // 
@@ -134,7 +134,6 @@
             TxUser.Name = "TxUser";
             TxUser.Size = new Size(146, 23);
             TxUser.TabIndex = 11;
-            TxUser.Text = "suportepbtec";
             // 
             // TxPass
             // 
@@ -144,7 +143,6 @@
             TxPass.PasswordChar = '*';
             TxPass.Size = new Size(146, 23);
             TxPass.TabIndex = 12;
-            TxPass.Text = "pbtec#337";
             // 
             // label4
             // 
