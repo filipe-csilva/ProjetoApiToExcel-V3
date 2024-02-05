@@ -2,6 +2,7 @@ using ApiToExcel.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace ApiToExcel.Clients;
@@ -60,7 +61,8 @@ public class VarejoFacilClient : IDisposable
 
         for (int inicial = limite; inicial <= ItensTotal; inicial += limite)
         {
-            _frm.ConcatTxtJson($"Consultando a página {numeroDaPagina} de {totalPaginas}");
+            _frm.UpdateTxtJson($"Consultando a página {numeroDaPagina} de {totalPaginas}");
+            //_frm.UpdateTxtJson(_tokenCredential.ToString());
 
             string paginaAtual = ConsultarItens(route: route, limite: limite, inicio: inicial);
 
@@ -107,14 +109,34 @@ public class VarejoFacilClient : IDisposable
         return response.Content.ReadFromJsonAsync<TokenCredential>().Result!;
     }
 
-    public void RefreshToken()
+    public async Task RefreshToken(CancellationToken cancellationToken = default)
     {
         string refreshToken = _tokenCredential.AccessToken;
 
-        TokenCredential novoToken = _http.GetFromJsonAsync<TokenCredential>(
-            $"auth/refresh?refreshToken={refreshToken}").Result!;
+        //_http.DefaultRequestHeaders.Add("Authorization", _tokenCredential.RefreshToken);
 
-        _tokenCredential = novoToken;
+        HttpRequestMessage httpRequestMessage = new()
+        {
+            Method = HttpMethod.Get,
+            RequestUri = new Uri("api/auth/refresh", UriKind.Relative),
+            Headers = { 
+                { HttpRequestHeader.Authorization.ToString(), _tokenCredential.RefreshToken },
+                { HttpRequestHeader.Accept.ToString(), "application/json" }
+            },
+        };
+
+        HttpResponseMessage message = await _http.SendAsync(httpRequestMessage, cancellationToken);
+        
+        // HttpResponseMessage message = await _http.GetAsync($"api/auth/refresh", cancellationToken);
+
+        string json = await message.Content.ReadAsStringAsync();
+
+        TokenCredential? novoToken = JsonConvert.DeserializeObject<TokenCredential>(json);
+
+        // TokenCredential? novoToken = await _http.GetFromJsonAsync<TokenCredential>(
+        //     $"api/auth/refresh", cancellationToken);
+
+        _tokenCredential = novoToken!;
     }
 
     protected virtual void Dispose(bool disposing)

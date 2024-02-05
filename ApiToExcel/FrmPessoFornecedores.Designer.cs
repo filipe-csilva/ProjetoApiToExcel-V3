@@ -48,10 +48,10 @@
             // TxtJson
             // 
             TxtJson.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            TxtJson.Location = new Point(0, 311);
+            TxtJson.Location = new Point(0, 313);
             TxtJson.Margin = new Padding(3, 100, 3, 3);
             TxtJson.Name = "TxtJson";
-            TxtJson.Size = new Size(435, 204);
+            TxtJson.Size = new Size(435, 193);
             TxtJson.TabIndex = 1;
             TxtJson.Text = "";
             TxtJson.TextChanged += TxtJson_TextChanged;
@@ -78,7 +78,7 @@
             TxUrlAPI.Name = "TxUrlAPI";
             TxUrlAPI.Size = new Size(411, 23);
             TxUrlAPI.TabIndex = 5;
-            TxUrlAPI.Text = "https://";
+            TxUrlAPI.Text = "https://manairahortifruti.varejofacil.com";
             // 
             // label1
             // 
@@ -106,7 +106,7 @@
             TxRouter.Name = "TxRouter";
             TxRouter.Size = new Size(411, 23);
             TxRouter.TabIndex = 8;
-            TxRouter.Text = "/api/v1/";
+            TxRouter.Text = "/api/v1/produto/produtos";
             // 
             // label2
             // 
@@ -123,9 +123,9 @@
             label3.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             label3.Location = new Point(12, 124);
             label3.Name = "label3";
-            label3.Size = new Size(242, 15);
+            label3.Size = new Size(125, 15);
             label3.TabIndex = 10;
-            label3.Text = "/api/v1/pessoa/client?start=1&&count=500";
+            label3.Text = "/api/v1/pessoa/client";
             // 
             // TxUser
             // 
@@ -134,6 +134,7 @@
             TxUser.Name = "TxUser";
             TxUser.Size = new Size(146, 23);
             TxUser.TabIndex = 11;
+            TxUser.Text = "suportepbtec";
             // 
             // TxPass
             // 
@@ -143,6 +144,7 @@
             TxPass.PasswordChar = '*';
             TxPass.Size = new Size(146, 23);
             TxPass.TabIndex = 12;
+            TxPass.Text = "pbtec#337";
             // 
             // label4
             // 

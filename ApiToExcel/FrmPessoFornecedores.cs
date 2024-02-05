@@ -3,6 +3,7 @@ using ApiToExcel.Models;
 using ApiToExcel.Services;
 using ClosedXML.Excel;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ApiToExcel
@@ -40,7 +41,8 @@ namespace ApiToExcel
         private async Task<JArray> ConsultarVinculos(IEnumerable<long> produtoIds)
         {
             DateTime startTime = DateTime.Now; // [Exemplo]
-            DateTime expirationTime = startTime.AddMinutes(28); // [Exemplo]
+            // DateTime expirationTime = startTime.AddMinutes(1); // [Exemplo]
+            DateTime expirationTime = startTime.AddMinutes(20); // [Exemplo]
 
             JArray vinculos = new();
 
@@ -48,9 +50,10 @@ namespace ApiToExcel
 
             foreach (long produtoId in produtoIds)
             {
-                if(DateTime.Now >= expirationTime)  // [Exemplo]
+                if (DateTime.Now >= expirationTime)  // [Exemplo]
                 {
-                    _varejoFacil.RefreshToken();  // [Exemplo]
+                    expirationTime = DateTime.Now.AddMinutes(20);
+                    await _varejoFacil.RefreshToken();  // [Exemplo]
                 }
 
                 JArray items = await ConsultarVinculos(produtoId);
@@ -60,7 +63,7 @@ namespace ApiToExcel
                     vinculos.Add(item);
                 }
                 quantidadeAtual++;
-                ConcatTxtJson($"Consultando vinculo do item {quantidadeAtual} de {quantidadeTotal}");
+                UpdateTxtJson($"Consultando vinculo do item {quantidadeAtual} de {quantidadeTotal}");
             }
 
             return vinculos;
@@ -71,31 +74,19 @@ namespace ApiToExcel
             return _varejoFacil.ConsultarVinculos(produtoId);
         }
 
-        // Passo 1: Consultar items genericos pela rota informada pelo usuario
         private async Task<JArray> GerarRelatorioGenerico()
         {
             ConcatTxtJson("Acessando Rotina Solicitada");
-            return _varejoFacil.GetFromRoute<JObject>(TxRouter.Text);
+            string router = TxRouter.Text;
+            return _varejoFacil.GetFromRoute<JObject>($"{router}");
         }
 
-        // Passo 0: Criar os métodos de consulta em VarejoFacilClient
-
-        // VarejoFacilClient.ConsultarProdutos(int max=100)
-        // GET: /api/v1/produto/produtos?limite=max
-
-        // VarejoFacilClient.ConsultarFornecedores(int max=100)
-        // GET: /api/v1/pessoa/fornecedores?limite=max
-
-        // VarejoFacilClient.ConsultarVinculos(int produtoId, int max=100)
-        // GET: /api/v1/produto/produtos/{produtoId}/?limite=max
         private async Task<JArray> GerarRelatorioVinculos()
         {
-            // Passo 1: Voce precisar ter as tres coleções preenchida com dados
             JArray produtos = await ConsultarProdutos();
             JArray fornecedores = await ConsultarFornecedores();
             JArray vinculos = await ConsultarVinculos(produtos);
 
-            // Passo 2: Faz o join e escolher as propriedades e seus nomes
             IEnumerable<JToken> items =
                 from p in produtos
                 join v in vinculos
@@ -126,12 +117,11 @@ namespace ApiToExcel
 
         private async void BtnExecutar_Click(object sender, EventArgs e)
         {
-
             string url = TxUrlAPI.Text;
 
             try
             {
-                ConcatTxtJson("Iniciando");
+                UpdateTxtJson("Iniciando");
 
                 if (string.IsNullOrWhiteSpace(url))
                 {
@@ -169,17 +159,33 @@ namespace ApiToExcel
                     if (_varejoFacil is null)
                         _varejoFacil = new VarejoFacilClient(url, credential, this);
                     else
-                        _varejoFacil.RefreshToken();
+                        await _varejoFacil.RefreshToken();
 
-                    bool vinculoAtivo = false;
-                    if (Cb_Vinculo.Checked) vinculoAtivo = true;
-                    bool isModuloProdutosFornecedores = vinculoAtivo;
+                    // so para test
+                    await _varejoFacil.RefreshToken();
 
-                    JArray relatorio = isModuloProdutosFornecedores switch
+                    bool isModuloProdutosFornecedores = Cb_Vinculo.Checked;
+
+                    Task<JArray> taskRelatorio = isModuloProdutosFornecedores switch
                     {
-                        true => await GerarRelatorioVinculos(),
-                        false => await GerarRelatorioGenerico()
+                        true => GerarRelatorioVinculos(),
+                        false => GerarRelatorioGenerico()
                     };
+
+                    // using CancellationTokenSource source = new();
+                    // CancellationToken token = source.Token;
+
+                    // var _ = Task.Run(async () => {
+                    //     while(!token.IsCancellationRequested)
+                    //     {
+                    //         await Task.Delay(TimeSpan.FromSeconds(15), token);
+                    //         await _varejoFacil.RefreshToken(token);
+                    //         Debug.WriteLine("Token Atualizado, talvez, se tivermos sorte!");
+                    //     }
+                    // }, token);
+
+                    JArray relatorio = await taskRelatorio;
+                    //source.Cancel();
 
                     await GerarArquivoXML(relatorio, saveFileDialog1.FileName);
                 }
@@ -199,7 +205,40 @@ namespace ApiToExcel
 
         public void ConcatTxtJson(string message)
         {
-            TxtJson.Text += Environment.NewLine+message;
+            if (!string.IsNullOrEmpty(TxtJson.Text))
+            {
+                TxtJson.AppendText(Environment.NewLine);
+            }
+
+            TxtJson.AppendText(message);
+
+            // Role automaticamente para o final
+            TxtJson.SelectionStart = TxtJson.Text.Length;
+            TxtJson.ScrollToCaret();
+        }
+
+        public void UpdateTxtJson(string message)
+        {
+            // Verifica se há pelo menos uma linha
+            if (TxtJson.Lines.Length > 0)
+            {
+                // Divide o conteúdo do RichTextBox por linhas
+                string[] linhas = TxtJson.Lines;
+
+                // Atualiza a última linha com o novo conteúdo
+                linhas[linhas.Length - 1] = message;
+
+                // Atualiza o conteúdo do RichTextBox
+                TxtJson.Lines = linhas;
+
+                // Role automaticamente para o final
+                TxtJson.SelectionStart = TxtJson.Text.Length;
+                TxtJson.ScrollToCaret();
+            }
+            else
+            {
+                    TxtJson.Text = message;
+            }
         }
 
         private void FrmPessoFornecedores_Load(object sender, EventArgs e)
